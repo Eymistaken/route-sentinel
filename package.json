@@ -1,0 +1,14 @@
+{
+  "name": "route-sentinel",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A Chromium extension that stops selected YouTube destinations before playback.",
+  "license": "GPL-3.0-only",
+  "scripts": {
+    "build": "sh scripts/build.sh",
+    "test": "node --test tests"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
