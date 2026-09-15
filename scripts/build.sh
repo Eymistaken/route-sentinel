@@ -25,6 +25,7 @@ mkdir -p -- "$build_directory"
 
 for source_file in manifest.json filter.js content.js blocked.html blocked.css; do
   cp -- "src/${source_file}" "${build_directory}/${source_file}"
+  chmod 0644 "${build_directory}/${source_file}"
   touch -t 198001010000 "${build_directory}/${source_file}"
 done
 
