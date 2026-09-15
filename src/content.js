@@ -46,17 +46,10 @@
     return "";
   }
 
-  function findOwnerUrl(root = document) {
+  function findCardOwnerUrl(root) {
     const links = root.querySelectorAll(
-      'link[itemprop="url"][href], a[itemprop="url"][href], a[href*="/channel/"], a[href*="/@"]',
+      'a[itemprop="url"][href], a[href*="/channel/"], a[href*="/@"]',
     );
-
-    for (const link of links) {
-      const value = link.getAttribute("href") || "";
-      if (filter.isKnownChannelUrl(value)) {
-        return value;
-      }
-    }
 
     for (const link of links) {
       const value = link.getAttribute("href") || "";
@@ -70,6 +63,27 @@
     }
 
     return "";
+  }
+
+  function findDocumentOwnerUrl() {
+    const value = firstAttribute(
+      [
+        'span[itemprop="author"] link[itemprop="url"]',
+        "ytd-watch-metadata #owner ytd-channel-name a[href]",
+        "ytd-video-owner-renderer ytd-channel-name a[href]",
+      ],
+      "href",
+    );
+
+    if (!value) {
+      return "";
+    }
+
+    try {
+      return new URL(value, location.href).href;
+    } catch {
+      return "";
+    }
   }
 
   function readDocumentMetadata() {
@@ -96,8 +110,12 @@
             'meta[itemprop="author"]',
           ],
           "content",
-        ) || firstText(["#channel-name", "ytd-channel-name"]),
-      ownerUrl: findOwnerUrl(),
+        ) ||
+        firstText([
+          "ytd-watch-metadata #channel-name",
+          "ytd-video-owner-renderer ytd-channel-name",
+        ]),
+      ownerUrl: findDocumentOwnerUrl(),
     };
   }
 
@@ -236,7 +254,7 @@
       channelId: "",
       ownerName:
         card?.querySelector("#channel-name, ytd-channel-name")?.textContent?.trim() || "",
-      ownerUrl: card ? findOwnerUrl(card) : "",
+      ownerUrl: card ? findCardOwnerUrl(card) : "",
     };
   }
 
