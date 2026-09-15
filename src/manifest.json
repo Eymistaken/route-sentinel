@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Route Sentinel",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Stops selected YouTube destinations before playback.",
   "content_scripts": [
     {
@@ -16,19 +16,6 @@
       ],
       "run_at": "document_start",
       "all_frames": false
-    }
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "blocked.html",
-        "blocked.css"
-      ],
-      "matches": [
-        "*://youtube.com/*",
-        "*://*.youtube.com/*",
-        "*://youtu.be/*"
-      ]
     }
   ]
 }

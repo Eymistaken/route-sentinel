@@ -28,6 +28,9 @@ test("recognizes supported video destination forms", () => {
   }
 
   assert.equal(filter.isVideoUrl("https://www.youtube.com/"), false);
+  assert.equal(filter.isYouTubeUrl("https://www.youtube.com/404"), true);
+  assert.equal(filter.isVideoUrl("https://www.youtube.com/404"), false);
+  assert.equal(filter.isKnownChannelUrl("https://www.youtube.com/404"), false);
   assert.equal(filter.isVideoUrl("https://www.youtube.com/results?search_query=crush"), false);
   assert.equal(filter.isVideoUrl("https://youtu.be/"), false);
 });

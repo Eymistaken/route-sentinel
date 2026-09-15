@@ -9,6 +9,7 @@
   }
 
   const OBSERVATION_TIMEOUT_MS = 12_000;
+  const BLOCKED_DESTINATION = "https://www.youtube.com/404";
   const VIDEO_CARD_SELECTOR = [
     "ytd-rich-item-renderer",
     "ytd-video-renderer",
@@ -174,7 +175,7 @@
     clearObserver();
     window.stop();
     stopMedia();
-    location.replace(chrome.runtime.getURL("blocked.html"));
+    location.replace(BLOCKED_DESTINATION);
   }
 
   function evaluateCurrentPage() {

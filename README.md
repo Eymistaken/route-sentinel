@@ -1,6 +1,6 @@
 # Route Sentinel
 
-Route Sentinel is a small, interface-free Chromium extension for Linux. It stops selected YouTube destinations and replaces them with a local `404 — Page not found` screen.
+Route Sentinel is a small, interface-free Chromium extension for Linux. It stops selected YouTube destinations and replaces them with YouTube's real 404 page in the same tab.
 
 The current rules block:
 
@@ -15,7 +15,7 @@ There is no toolbar button, settings screen, account, analytics, telemetry, remo
 
 Route Sentinel currently supports desktop Chromium on Linux. Firefox is not included in this release because standard Firefox builds require Mozilla-signed extension packages.
 
-1. Download `route-sentinel-chromium-v1.0.0.zip` from the latest GitHub Release or build it locally.
+1. Download `route-sentinel-chromium-v1.1.0.zip` from the latest GitHub Release or build it locally.
 2. Extract the ZIP into a permanent folder. Do not select the ZIP itself and do not delete the extracted folder after installation.
 3. Open `chrome://extensions` in Chromium.
 4. Enable **Developer mode**.
@@ -41,7 +41,7 @@ The extension creates no native service, startup entry, user account, or separat
 
 ## How it works
 
-The content script starts at Chromium's earliest `document_start` phase on `youtube.com` and `youtu.be`. Known channel URLs are checked directly. On video destinations, the extension reads the title and owner information from the page metadata and YouTube's serialized player data. When a rule matches, it stops the document, clears media elements, and navigates to the bundled error page.
+The content script starts at Chromium's earliest `document_start` phase on `youtube.com` and `youtu.be`. Known channel URLs are checked directly. On video destinations, the extension reads the title and owner information from the page metadata and YouTube's serialized player data. When a rule matches, it stops the document, clears media elements, and replaces the current location with [`https://www.youtube.com/404`](https://www.youtube.com/404). The navigation stays in the same tab, and YouTube provides the mascot, branding, and search form.
 
 YouTube does not put a title or channel ID in a normal `/watch?v=...` URL. The browser must therefore receive enough of the initial HTML response to expose that metadata. Route Sentinel is designed to stop a matching page before normal interaction and media playback, but it cannot guarantee that zero bytes of the initial HTML were downloaded. It does not intercept HTTPS, install a root certificate, or proxy browser traffic.
 
@@ -78,7 +78,7 @@ Build the release package:
 npm run build
 ```
 
-The build is written to `dist/route-sentinel-chromium-v1.0.0.zip`. Its archive root contains `manifest.json`, so the extracted directory can be selected directly with **Load unpacked**.
+The build is written to `dist/route-sentinel-chromium-v1.1.0.zip`. Its archive root contains `manifest.json`, so the extracted directory can be selected directly with **Load unpacked**.
 
 ## License
 
