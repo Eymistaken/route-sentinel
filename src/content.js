@@ -179,30 +179,30 @@
 
   function evaluateCurrentPage() {
     if (blocked) {
-      return true;
+      return "blocked";
     }
 
     if (filter.isKnownChannelUrl(location.href)) {
       blockPage();
-      return true;
+      return "blocked";
     }
 
     if (!filter.isVideoUrl(location.href)) {
-      return false;
+      return "allowed";
     }
 
     if (filter.shouldBlockMetadata(readDocumentMetadata())) {
       blockPage();
-      return true;
+      return "blocked";
     }
 
     const serializedMetadata = readSerializedMetadata();
     if (filter.shouldBlockMetadata(serializedMetadata)) {
       blockPage();
-      return true;
+      return "blocked";
     }
 
-    return false;
+    return serializedMetadata ? "allowed" : "pending";
   }
 
   function beginCheck() {
@@ -210,7 +210,7 @@
     observedUrl = location.href;
     blocked = false;
 
-    if (evaluateCurrentPage() || !filter.isVideoUrl(observedUrl)) {
+    if (evaluateCurrentPage() !== "pending") {
       return;
     }
 
@@ -219,7 +219,9 @@
         beginCheck();
         return;
       }
-      evaluateCurrentPage();
+      if (evaluateCurrentPage() !== "pending") {
+        clearObserver();
+      }
     });
     observer.observe(document, {
       attributes: true,
