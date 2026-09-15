@@ -89,6 +89,7 @@
 
   function readDocumentMetadata() {
     const title =
+      (document.title || "").replace(/\s+-\s+YouTube\s*$/i, "").trim() ||
       firstAttribute(
         [
           'meta[name="title"]',
@@ -96,7 +97,7 @@
           'head > meta[itemprop="name"]',
         ],
         "content",
-      ) || document.title.replace(/\s+-\s+YouTube\s*$/i, "");
+      );
 
     return {
       title,

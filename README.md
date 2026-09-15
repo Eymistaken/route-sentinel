@@ -15,7 +15,7 @@ There is no toolbar button, settings screen, account, analytics, telemetry, remo
 
 Route Sentinel currently supports desktop Chromium on Linux. Firefox is not included in this release because standard Firefox builds require Mozilla-signed extension packages.
 
-1. Download `route-sentinel-chromium-v1.1.0.zip` from the latest GitHub Release or build it locally.
+1. Download `route-sentinel-chromium-v1.1.1.zip` from the latest GitHub Release or build it locally.
 2. Extract the ZIP into a permanent folder. Do not select the ZIP itself and do not delete the extracted folder after installation.
 3. Open `chrome://extensions` in Chromium.
 4. Enable **Developer mode**.
@@ -78,7 +78,7 @@ Build the release package:
 npm run build
 ```
 
-The build is written to `dist/route-sentinel-chromium-v1.1.0.zip`. Its archive root contains `manifest.json`, so the extracted directory can be selected directly with **Load unpacked**.
+The build is written to `dist/route-sentinel-chromium-v1.1.1.zip`. Its archive root contains `manifest.json`, so the extracted directory can be selected directly with **Load unpacked**.
 
 ## License
 
