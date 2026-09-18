@@ -19,6 +19,13 @@ function runContentScript({ documentStub, href, embedded = false, sentinel = fil
       navigation.push(destination);
     },
   };
+  const listeners = new Map();
+
+  const baseAddEventListener = documentStub.addEventListener?.bind(documentStub);
+  documentStub.addEventListener = (type, listener, capture) => {
+    listeners.set(type, listener);
+    baseAddEventListener?.(type, listener, capture);
+  };
   const window = {
     addEventListener() {},
     stop() {},
@@ -43,7 +50,12 @@ function runContentScript({ documentStub, href, embedded = false, sentinel = fil
     window,
   });
 
-  return navigation;
+  return {
+    navigation,
+    reportPlayerData(detail) {
+      listeners.get("routesentinel:videodata")?.({ detail });
+    },
+  };
 }
 
 test("replaces a blocked destination with YouTube's 404 page in the current tab", () => {
@@ -112,7 +124,7 @@ test("blocks a matching current tab title when YouTube metadata is stale", () =>
     runContentScript({
       documentStub,
       href: "https://www.youtube.com/watch?v=IKgJr8hyv14",
-    }),
+    }).navigation,
     ["https://www.youtube.com/404"],
   );
 });
@@ -139,7 +151,7 @@ test("blocks an embedded player from its title bar and empties the frame", () =>
       documentStub,
       href: "https://www.youtube.com/embed/IKgJr8hyv14?autoplay=1&origin=https%3A%2F%2Fwww.google.com",
       embedded: true,
-    }),
+    }).navigation,
     ["about:blank"],
   );
 });
@@ -168,9 +180,89 @@ test("blocks a lyric reupload embedded by an unrelated channel", () => {
       documentStub,
       href: "https://www.youtube-nocookie.com/embed/abc123",
       embedded: true,
-    }),
+    }).navigation,
     ["about:blank"],
   );
+});
+
+test("blocks an embedded player from what YouTube's own player reports", () => {
+  // Nothing identifying is in the markup: only the player API knows the video.
+  const documentStub = {
+    addEventListener() {},
+    querySelector() {
+      return null;
+    },
+    querySelectorAll() {
+      return [];
+    },
+    scripts: [],
+    title: "YouTube",
+  };
+
+  const session = runContentScript({
+    documentStub,
+    href: "https://www.youtube.com/e/IKgJr8hyv14",
+    embedded: true,
+  });
+
+  assert.deepEqual(session.navigation, []);
+
+  session.reportPlayerData(
+    JSON.stringify({ title: "manifest - Toz Pembe | Official Music Video", ownerName: "manifest" }),
+  );
+
+  assert.deepEqual(session.navigation, ["about:blank"]);
+});
+
+test("ignores player reports that are unrelated, malformed, or oversized", () => {
+  const documentStub = {
+    addEventListener() {},
+    querySelector() {
+      return null;
+    },
+    querySelectorAll() {
+      return [];
+    },
+    scripts: [],
+    title: "YouTube",
+  };
+
+  const session = runContentScript({
+    documentStub,
+    href: "https://www.youtube.com/embed/abc123",
+    embedded: true,
+  });
+
+  session.reportPlayerData(JSON.stringify({ title: "Linux kernel release notes" }));
+  session.reportPlayerData("not json");
+  session.reportPlayerData(JSON.stringify({ title: "Toz Pembe" }).padEnd(9000, " "));
+  session.reportPlayerData(undefined);
+  session.reportPlayerData(JSON.stringify(null));
+
+  assert.deepEqual(session.navigation, []);
+});
+
+test("keeps a player report in a top-level feed from blocking the feed", () => {
+  const documentStub = {
+    addEventListener() {},
+    querySelector() {
+      return null;
+    },
+    querySelectorAll() {
+      return [];
+    },
+    scripts: [],
+    title: "YouTube",
+  };
+
+  const session = runContentScript({
+    documentStub,
+    href: "https://www.youtube.com/",
+  });
+
+  session.reportPlayerData(JSON.stringify({ title: "manifest - Toz Pembe", ownerName: "manifest" }));
+
+  assert.deepEqual(session.navigation, []);
 });
 
 test("leaves an unrelated embedded player alone", () => {
@@ -194,7 +286,7 @@ test("leaves an unrelated embedded player alone", () => {
       documentStub,
       href: "https://www.youtube.com/embed/abc123",
       embedded: true,
-    }),
+    }).navigation,
     [],
   );
 });

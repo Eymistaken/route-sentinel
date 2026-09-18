@@ -29,10 +29,22 @@ An embedded player publishes its metadata differently from a watch page:
 
 A destination counts as resolved only when serialized data yields a non-empty title. Previously any parsed object ended observation, which would have stopped the mutation observer before an embedded player rendered its title.
 
+## Player-Reported Metadata
+
+Reading a framed player's markup means depending on class names YouTube can change, and a player that is still initializing publishes nothing at all. A separate content script therefore runs in the page's own JavaScript context, where the YouTube player element exposes `getVideoData()`, and polls for it while a decision is outstanding.
+
+That script has one job: report. It serializes the title and author to JSON and dispatches them on a DOM event. It never blocks, never navigates, and never reads anything else from the page. The isolated content script receives the event, rejects a payload that is not a string or is over 8 KiB, parses it as JSON, and runs the existing rules. A report is honored inside a frame, where the frame exists only to play its own video, and in a top-level tab only when the address is a video destination, so that a hover preview inside a feed cannot blank the feed.
+
+If the browser does not support a page-context content script, the declaration is ignored and the markup and serialized-data paths continue to apply.
+
+The framed player path forms `/e/` and `/v/` are recognized alongside `/embed/`.
+
 ## Acceptance Criteria
 
 - A matching video played inside Google Search's inline player stops and leaves the player area blank.
 - A non-matching embedded video plays normally.
+- A matching video is blocked from the player's own report even when nothing identifying is in the markup.
+- A player report in a top-level feed does not block the feed.
 - Top-level blocking still navigates to `https://www.youtube.com/404`.
 - A lyric video titled with a known song title alone is blocked on any channel.
 - `Hileli` matches and `Hilelileri` does not.

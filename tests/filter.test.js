@@ -183,3 +183,14 @@ test("handles malformed and oversized serialized data safely", () => {
   assert.equal(filter.extractPlayerMetadata('{"embedded_player_response":"not json"}'), null);
   assert.equal(filter.extractPlayerMetadata(null), null);
 });
+
+test("recognizes the other framed player path forms YouTube serves", () => {
+  for (const url of ["https://www.youtube.com/e/abc", "https://www.youtube.com/v/abc"]) {
+    assert.equal(filter.isEmbedUrl(url), true, url);
+    assert.equal(filter.isVideoUrl(url), true, url);
+  }
+
+  assert.equal(filter.isEmbedUrl("https://www.youtube.com/e"), false);
+  assert.equal(filter.isEmbedUrl("https://www.youtube.com/feed/subscriptions"), false);
+  assert.equal(filter.isVideoUrl("https://www.youtube.com/feed/subscriptions"), false);
+});

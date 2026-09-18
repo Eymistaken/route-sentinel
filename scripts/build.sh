@@ -23,7 +23,7 @@ rm -rf -- "$build_directory"
 rm -f -- "$archive_path"
 mkdir -p -- "$build_directory"
 
-for source_file in manifest.json filter.js content.js; do
+for source_file in manifest.json filter.js content.js player-probe.js; do
   cp -- "src/${source_file}" "${build_directory}/${source_file}"
   chmod 0644 "${build_directory}/${source_file}"
   touch -t 198001010000 "${build_directory}/${source_file}"
@@ -35,7 +35,7 @@ node -e 'JSON.parse(require("node:fs").readFileSync(process.argv[1], "utf8"))' \
 (
   cd "$build_directory"
   zip -X -q "../${package_name}.zip" \
-    manifest.json filter.js content.js
+    manifest.json filter.js content.js player-probe.js
 )
 
 echo "Built ${archive_path}"

@@ -39,6 +39,9 @@
     "@m6nifestgirls",
     "@wearecrushboys",
   ]);
+  // YouTube serves framed players from several path forms, and a host page is
+  // free to pick any of them.
+  const EMBED_PATH_PREFIXES = new Set(["embed", "e", "v"]);
   // Embedded players ship their player data as a JSON string inside another
   // JSON document, so these keys are unwrapped before the data is searched.
   const SERIALIZED_RESPONSE_KEYS = Object.freeze([
@@ -105,7 +108,7 @@
 
     return (
       segments.length > 1 &&
-      (segments[0] === "shorts" || segments[0] === "live" || segments[0] === "embed")
+      (segments[0] === "shorts" || segments[0] === "live" || EMBED_PATH_PREFIXES.has(segments[0]))
     );
   }
 
@@ -116,7 +119,7 @@
     }
 
     const segments = decodedPathSegments(url);
-    return segments.length > 1 && segments[0] === "embed";
+    return segments.length > 1 && EMBED_PATH_PREFIXES.has(segments[0]);
   }
 
   function isKnownChannelUrl(input) {

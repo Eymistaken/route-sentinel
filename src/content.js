@@ -10,6 +10,9 @@
 
   const OBSERVATION_TIMEOUT_MS = 12_000;
   const BLOCKED_DESTINATION = "https://www.youtube.com/404";
+  // Reported by the page-context probe, which asks YouTube's player itself.
+  const PLAYER_DATA_EVENT = "routesentinel:videodata";
+  const MAX_PLAYER_DATA_LENGTH = 8 * 1024;
   // YouTube refuses to render its own pages inside a third-party frame, so an
   // embedded player is emptied in place instead of being sent to the 404 page.
   const BLOCKED_FRAME_DESTINATION = "about:blank";
@@ -339,6 +342,47 @@
     }
   }
 
+  function handlePlayerData(event) {
+    if (
+      blocked ||
+      typeof event.detail !== "string" ||
+      event.detail.length === 0 ||
+      event.detail.length > MAX_PLAYER_DATA_LENGTH
+    ) {
+      return;
+    }
+
+    let data;
+    try {
+      data = JSON.parse(event.detail);
+    } catch {
+      return;
+    }
+
+    if (data === null || typeof data !== "object") {
+      return;
+    }
+
+    // A frame only exists to play its own video, so the player's report is
+    // enough there. In a top-level tab the location must be a video
+    // destination, so that a hover preview in a feed cannot block the feed.
+    if (!filter.isVideoUrl(location.href) && !isEmbeddedFrame()) {
+      return;
+    }
+
+    const metadata = {
+      title: typeof data.title === "string" ? data.title : "",
+      channelId: "",
+      ownerName: typeof data.ownerName === "string" ? data.ownerName : "",
+      ownerUrl: "",
+    };
+
+    if (filter.shouldBlockMetadata(metadata)) {
+      blockPage();
+    }
+  }
+
+  document.addEventListener(PLAYER_DATA_EVENT, handlePlayerData, true);
   document.addEventListener("click", handleCapturedClick, true);
   document.addEventListener("yt-navigate-start", scheduleCheck, true);
   document.addEventListener("yt-navigate-finish", scheduleCheck, true);

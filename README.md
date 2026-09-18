@@ -17,7 +17,7 @@ There is no toolbar button, settings screen, account, analytics, telemetry, remo
 
 Route Sentinel currently supports desktop Chromium on Linux. Firefox is not included in this release because standard Firefox builds require Mozilla-signed extension packages.
 
-1. Download `route-sentinel-chromium-v1.2.0.zip` from the latest GitHub Release or build it locally.
+1. Download `route-sentinel-chromium-v1.2.1.zip` from the latest GitHub Release or build it locally.
 2. Extract the ZIP into a permanent folder. Do not select the ZIP itself and do not delete the extracted folder after installation.
 3. Open `chrome://extensions` in Chromium.
 4. Enable **Developer mode**.
@@ -49,9 +49,11 @@ A match in the top-level tab replaces the current location with [`https://www.yo
 
 ### Embedded players
 
-Search engines and other sites play YouTube videos without leaving their own page by loading `youtube.com/embed/...` in a frame. Because that frame is a YouTube document, Route Sentinel runs inside it and applies the same rules. YouTube refuses to render its own pages inside a third-party frame, so a matching embedded player is emptied in place instead of being sent to the 404 page: the video stops and the player area goes blank while the surrounding page is left untouched.
+Search engines and other sites play YouTube videos without leaving their own page by loading a YouTube player (`/embed/`, `/e/`, or `/v/`) in a frame. Because that frame is a YouTube document, Route Sentinel runs inside it and applies the same rules. YouTube refuses to render its own pages inside a third-party frame, so a matching embedded player is emptied in place instead of being sent to the 404 page: the video stops and the player area goes blank while the surrounding page is left untouched.
 
 The extension does not request access to Google Search or any other non-YouTube site, and it does not read or modify the page that hosts the player.
+
+A framed player publishes very little in its markup, and the markup it does publish is YouTube's to restyle at any time. So a second, separate script runs in the page's own JavaScript context and asks YouTube's player which video it holds, through the player's own `getVideoData()` method. That script only reports what the player says, as a JSON string on a DOM event; it makes no decision and performs no blocking. The isolated content script parses that report under a size limit and applies the same rules as everywhere else. A report is acted on inside a frame, or in a top-level tab only when the address is a video destination, so a hover preview in a feed cannot blank the feed.
 
 ### Loading boundary
 
@@ -94,7 +96,7 @@ Build the release package:
 npm run build
 ```
 
-The build is written to `dist/route-sentinel-chromium-v1.2.0.zip`. Its archive root contains `manifest.json`, so the extracted directory can be selected directly with **Load unpacked**.
+The build is written to `dist/route-sentinel-chromium-v1.2.1.zip`. Its archive root contains `manifest.json`, so the extracted directory can be selected directly with **Load unpacked**.
 
 ## License
 
