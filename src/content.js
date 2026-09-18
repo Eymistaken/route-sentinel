@@ -10,6 +10,27 @@
 
   const OBSERVATION_TIMEOUT_MS = 12_000;
   const BLOCKED_DESTINATION = "https://www.youtube.com/404";
+  // YouTube refuses to render its own pages inside a third-party frame, so an
+  // embedded player is emptied in place instead of being sent to the 404 page.
+  const BLOCKED_FRAME_DESTINATION = "about:blank";
+  // An embedded player keeps the document title generic until its own chrome
+  // renders, so a bare "YouTube" must not be mistaken for a resolved title.
+  const PLACEHOLDER_TITLES = new Set(["", "youtube"]);
+  const EMBED_TITLE_SELECTORS = [
+    ".ytp-title-link",
+    ".ytp-title-text a",
+    ".ytp-title-expanded-title",
+  ];
+  const EMBED_OWNER_NAME_SELECTORS = [
+    ".ytp-title-channel-name",
+    ".ytp-title-expanded-subtitle",
+    ".ytp-title-subtext a",
+  ];
+  const EMBED_OWNER_URL_SELECTORS = [
+    ".ytp-title-channel a[href]",
+    "a.ytp-title-channel-logo[href]",
+    ".ytp-title-subtext a[href]",
+  ];
   const VIDEO_CARD_SELECTOR = [
     "ytd-rich-item-renderer",
     "ytd-video-renderer",
@@ -25,6 +46,14 @@
   let observationTimeout = null;
   let scheduledCheck = null;
   const inspectedScripts = new WeakSet();
+
+  function isEmbeddedFrame() {
+    try {
+      return window.top !== window.self;
+    } catch {
+      return true;
+    }
+  }
 
   function firstAttribute(selectors, attributeName) {
     for (const selector of selectors) {
@@ -72,6 +101,7 @@
         'span[itemprop="author"] link[itemprop="url"]',
         "ytd-watch-metadata #owner ytd-channel-name a[href]",
         "ytd-video-owner-renderer ytd-channel-name a[href]",
+        ...EMBED_OWNER_URL_SELECTORS,
       ],
       "href",
     );
@@ -87,17 +117,25 @@
     }
   }
 
+  function meaningfulTitle(value) {
+    const cleaned = (value || "").replace(/\s+-\s+YouTube\s*$/i, "").trim();
+    return PLACEHOLDER_TITLES.has(cleaned.toLowerCase()) ? "" : cleaned;
+  }
+
   function readDocumentMetadata() {
     const title =
-      (document.title || "").replace(/\s+-\s+YouTube\s*$/i, "").trim() ||
-      firstAttribute(
-        [
-          'meta[name="title"]',
-          'meta[property="og:title"]',
-          'head > meta[itemprop="name"]',
-        ],
-        "content",
-      );
+      meaningfulTitle(document.title) ||
+      meaningfulTitle(
+        firstAttribute(
+          [
+            'meta[name="title"]',
+            'meta[property="og:title"]',
+            'head > meta[itemprop="name"]',
+          ],
+          "content",
+        ),
+      ) ||
+      meaningfulTitle(firstText(EMBED_TITLE_SELECTORS));
 
     return {
       title,
@@ -116,6 +154,7 @@
         firstText([
           "ytd-watch-metadata #channel-name",
           "ytd-video-owner-renderer ytd-channel-name",
+          ...EMBED_OWNER_NAME_SELECTORS,
         ]),
       ownerUrl: findDocumentOwnerUrl(),
     };
@@ -176,7 +215,7 @@
     clearObserver();
     window.stop();
     stopMedia();
-    location.replace(BLOCKED_DESTINATION);
+    location.replace(isEmbeddedFrame() ? BLOCKED_FRAME_DESTINATION : BLOCKED_DESTINATION);
   }
 
   function evaluateCurrentPage() {
@@ -204,7 +243,9 @@
       return "blocked";
     }
 
-    return serializedMetadata ? "allowed" : "pending";
+    // An embedded player ships player data without a title, so keep observing
+    // until a title is known rather than treating the destination as allowed.
+    return filter.hasResolvedTitle(serializedMetadata) ? "allowed" : "pending";
   }
 
   function beginCheck() {
